@@ -91,6 +91,11 @@ class Produs {
             return *this;
         }
 
+        void actualizeazaStoc(int numar) {
+            stoc -= numar;
+            if (stoc < 0) stoc = 0;
+        }
+
         const char* getNume() const { return nume; }
         double getPret() const { return pret; }
         int getStoc() const { return stoc; }
@@ -104,34 +109,145 @@ class Produs {
 };
 
 std::ostream& operator<<(std::ostream& os, const Produs& pr) {
-    os << pr.nume << " " << pr.pret << "\n";
+    os << pr.id << " " << pr.nume << " " << pr.pret<<" lei: " ;
+    if (pr.stoc > 0) os<<"Disponibil"<<"\n";
+    else os << "Indisponibil" << "\n";
     return os;
 }
 
 class Cos {
-        Client proprietar;
-        int id_comanda;
-        int nrProduse;
-        double valoare;
-    public:
-        Cos(const Client& proprietar_, const int id_comanda_, int nrProduse_, double valoare_) : proprietar{proprietar_}, id_comanda{id_comanda_}, nrProduse{nrProduse_}, valoare{valoare_} {}
+    Client proprietar;
+    int id_comanda;
+    int nrProduse;
+    double valoare;
 
-        ~Cos() = default;
+    struct ItemComanda {
+        int idProdus;
+        int cantitate;
+        double pretUnitar;
+    };
+    ItemComanda* items;
+
+public:
+
+    Cos(const Client& proprietar_, const int id_comanda_) : proprietar{proprietar_}, id_comanda{id_comanda_}, nrProduse{0}, valoare{0.0} {
+        items = new ItemComanda[10];
+    }
+
+    Cos(const Cos& other)
+        : proprietar{other.proprietar}, id_comanda{other.id_comanda},
+          nrProduse{other.nrProduse}, valoare{other.valoare}
+    {
+        items = new ItemComanda[10];
+        for (int i = 0; i < nrProduse; ++i)
+            items[i] = other.items[i];
+
+    }
+
+    Cos& operator=(const Cos& other) {
+        if (this != &other) {
+            delete[] items;
+            proprietar = other.proprietar;
+            id_comanda = other.id_comanda;
+            nrProduse = other.nrProduse;
+            valoare = other.valoare;
+
+            items = new ItemComanda[10];
+            for (int i = 0; i < nrProduse; ++i)
+                items[i] = other.items[i];
+        }
+        return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Cos& c);
+
+    ~Cos() {
+        delete[] items;
+    }
+
+    void adaugaProdus(int idProdus, int cantitate, double pret, Produs** catalog, int nrProduse) {
+
+        bool gasit = false;
+        for (int i = 0; i < nrProduse; ++i) {
+            if (catalog[i]->getId() == idProdus) {
+                if (catalog[i]->getStoc() < cantitate) {
+                    std::cout << "Stoc insuficient pentru produsul "
+                              << catalog[i]->getNume() << " (stoc: "
+                              << catalog[i]->getStoc() << ")\n";
+                    if (catalog[i]->getId()%10 != 0 || catalog[i+1]->getId() == catalog[i]->getId()+1 ) {
+                        std::cout << "Produse similare: ";
+                        int idsim = catalog[i]->getId() / 10;
+                        for (int j = 0; j < nrProduse; ++j) {
+                            if (catalog[j]->getId() / 10 == idsim)
+                                std::cout << *catalog[i];
+                        }
+                    }
+                    return;
+                }
+                gasit = true;
+                break;
+            }
+        }
+        if (!gasit) {
+            std::cout << "Produsul cu ID " << idProdus << " nu există în catalog.\n";
+            return;
+        }
+
+        items[nrProduse].idProdus = idProdus;
+        items[nrProduse].cantitate = cantitate;
+        items[nrProduse].pretUnitar = pret;
+        nrProduse++;
+
+        valoare += cantitate * pret;
+    }
+
 };
+std::ostream& operator<<(std::ostream& os, const Cos& c) {
+    os<<"Id-ul comenzii: "<<c.id_comanda<<"\n"<<c.nrProduse<<" produse in valoare de "<<c.valoare<<" de lei";
+    return os;
+}
+
 int main() {
-    Produs carne("Carne tocata vita", 15.50, 11, 23);
-    Produs scaun("Scaun romantic", 89.99, 21, 12);
-    Produs masa("Masa inima", 209.98, 22, 16);
-    Produs fata("Fata de masa carouri", 24.97, 23, 44);
-    Produs tacamuri("Set tacamuri inox", 36.66,24, 31);
-    Produs paste1("Fusilli", 6.99, 12, 40);
-    Produs paste2("Spaghetti", 5.49, 13, 20);
-    Produs paste3("Penne", 7.67, 14, 32);
-    Produs sos("Sos rosu", 10.00, 15, 50);
-    Produs sos2("Sos alb", 14.20, 16, 34);
+    int nr = 10;
+    Produs** catalog = new Produs*[nr];
+    catalog[0] = new Produs("Scaun romantic", 89.99, 210, 12);
+    catalog[1] = new Produs ("Masa inima", 209.98, 220, 16);
+    catalog[2] = new Produs ("Fata de masa carouri", 24.97, 230, 44);
+    catalog[3] = new Produs ("Set tacamuri inox", 36.66,240, 31);
+    catalog[4] = new Produs("Carne tocata vita", 15.50, 110, 23);
+    catalog[5] = new Produs ("Fusilli", 6.99, 120, 40);
+    catalog[6] = new Produs ("Spaghetti", 5.49, 121, 20);
+    catalog[7] = new Produs ("Penne", 7.67, 122, 32);
+    catalog[8] = new Produs ("Sos rosu", 10.00, 130, 50);
+    catalog[9] = new Produs ("Sos alb", 14.20, 131, 34);
 
+    char nume[100];
+    char adresa[200];
+    double sold;
+    int id=12345;
 
+    std::cout << "Salut, bine ai venit pe platforma de aprovizionare pentru restaurantul tau romantic de paste!\n";
+    std::cout << "Introdu numele: ";
+    std::cin.getline(nume, 100);
 
+    std::cout << "Introdu adresa: ";
+    std::cin.getline(adresa, 200);
+
+    std::cout << "Introdu soldul disponibil: ";
+    std::cin >> sold;
+
+    Client client(nume, adresa, sold, id);
+
+    std::cout << "Catalog produse:\n";
+    for (int i = 0; i < nr; ++i) {
+        std::cout << *catalog[i];
+    }
+    int idprod;
+    int cantitateprod;
+    while (true){
+        std::cin >> idprod >> cantitateprod;
+        Cos::adaugaProdus(idprod, cantitateprod);
+    }
 
     return 0;
 }
