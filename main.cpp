@@ -11,7 +11,6 @@ Ca functii vom avea:
  */
 #include <iostream>
 #include <cstring>
-#include <conio.h>
 
 class Client {
     char *nume;
@@ -112,9 +111,7 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &os, const Produs &pr) {
-    os << pr.id << " " << pr.nume << " " << pr.pret << " lei: ";
-    if (pr.stoc > 0) os << "Disponibil" << "\n";
-    else os << "Indisponibil" << "\n";
+    os << pr.id << " " << pr.nume << " " << pr.pret << " lei: " << pr.stoc << " bucati\n";
     return os;
 }
 
@@ -180,11 +177,11 @@ public:
                     const int idsim = catalog[i]->getId() / 10;
                     int nrsim=0;
                     for (int j = 0; j < nrCatalog; ++j) {
-                        if (catalog[j]->getId() / 10 == idsim){
+                        if (catalog[j]->getId() / 10 == idsim && i != j){
                             if (nrsim == 0) {
                                 std::cout << "Produse similare: \n"; nrsim++;
                             }
-                        std::cout << *catalog[i]<<"\n";
+                        std::cout << *catalog[j]<<"\n";
                         }
                     }
                     return;
@@ -223,7 +220,7 @@ public:
         } else {
             std::cout << "Produse:\n";
             for (int i = 0; i < nrProduse; ++i) {
-                std::cout << "  - Produs ID: " << items[i].idProdus
+                std::cout <<"Index: "<< i+1 <<"  - Produs ID: " << items[i].idProdus
                         << ", Cantitate: " << items[i].cantitate
                         << ", Pret unitar: " << items[i].pretUnitar
                         << ", Subtotal: " << items[i].cantitate * items[i].pretUnitar << "\n";
@@ -232,7 +229,7 @@ public:
         }
         std::cout << "=====================\n";
     }
-
+private:
     void sesiuneEliminare() {
         while (valoare > proprietar.getSold()) {
             std::cout << "\nATENTIE: Cosul depaseste soldul!\n";;
@@ -245,7 +242,8 @@ public:
             index--;
 
             if (index < 0 || index >= nrProduse) {
-                std::cout << "Index invalid. Încearcă din nou.\n";
+                std::cout << "Index invalid. Incearca din nou.\n";
+                continue;
             }
 
             std::cout << "Cate bucati vrei sa elimini? (0 = tot): ";
@@ -257,7 +255,7 @@ public:
 
         afiseazaCos();
     }
-
+public:
     bool proceseazaComanda(Produs **catalog) {
         if (nrProduse == 0) {
             std::cout << "Cosul este gol.\n";
@@ -319,23 +317,27 @@ int main() {
     std::cout << "Introdu soldul disponibil: ";
     std::cin >> sold;
 
+
     Client client(nume, adresa, sold, id_client);
     Cos cos(client, id_cos);
 
-    std::cout << "Catalog produse:\n";
-    for (int i = 0; i < nr; ++i) {
-        std::cout << *catalog[i];
-    }
 
     bool comandaFinalizata = false;
     while (!comandaFinalizata) {
+        std::cout << "\033[2J\033[1;1H";
+
+        std::cout << "Catalog produse:\n";
+        for (int i = 0; i < nr; ++i) {
+        std::cout << *catalog[i];
+        }
+
         std::cout << "\n--- MENIU ---\n";
         std::cout << "1. Adauga produs\n";
         std::cout << "2. Elimina produs\n";
-        std::cout << "3. Afiseaza coș\n";
+        std::cout << "3. Afiseaza cos\n";
         std::cout << "4. Finalizeaza comanda (check-out)\n";
         std::cout << "5. Iesire \n";
-        std::cout << "Alege opțiunea: ";
+        std::cout << "Alege optiunea: ";
 
         int opt;
         std::cin >> opt;
@@ -343,6 +345,12 @@ int main() {
 
         switch (opt) {
             case 1: {
+                std::cout << "\033[2J\033[1;1H";
+                std::cout << "Catalog produse:\n";
+                for (int i = 0; i < nr; ++i) {
+                std::cout << *catalog[i];
+                }
+                std::cout <<"\n";
                 int id, cant;
                 std::cout << "ID produs: ";
                 std::cin >> id;
@@ -363,6 +371,12 @@ int main() {
                 break;
             }
             case 2: {
+                std::cout << "\033[2J\033[1;1H";
+                std::cout << "Catalog produse:\n";
+                for (int i = 0; i < nr; ++i) {
+                std::cout << *catalog[i];
+                }
+                std::cout <<"\n";
                 cos.afiseazaCos();
                 if (cos.getNrProduse() == 0) break;
                 std::cout << "Indexul produsului de eliminat: ";
@@ -375,19 +389,22 @@ int main() {
                 break;
             }
             case 3:
+                std::cout << "\033[2J\033[1;1H";
                 cos.afiseazaCos();
                 break;
             case 4:
+                std::cout << "\033[2J\033[1;1H";
                 if (cos.proceseazaComanda(catalog)) {
                     comandaFinalizata = true;
                 }
+                std::cout<<cos;
                 break;
             case 5:
                 std::cout << "Ai renuntat la comanda.\n";
                 comandaFinalizata = true;
                 break;
             default:
-                std::cout << "Opțiune invalida.\n";
+                std::cout << "Optiune invalida.\n";
         }
     }
 
